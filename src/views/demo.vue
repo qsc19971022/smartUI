@@ -1,19 +1,16 @@
 <template>
   <div className="vue-root">
-    <smart-grid
-      id="grid"
-      ref="grid"
-      @change="change"
-      @rowBeginEdit="onRowEndEdit"
-    ></smart-grid>
+    <smart-grid ref="grid" @rowClick="onEndEdit" id="grid"></smart-grid>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted } from "vue";
 import "smart-webcomponents/source/styles/smart.default.css";
 import "smart-webcomponents/source/modules/smart.grid.js";
+
 onMounted(() => {
+  // const grid = ref();
   window.Smart(
     "#grid",
     class {
@@ -144,32 +141,17 @@ onMounted(() => {
               "BirthDate: date",
             ],
           }),
-          appearance: {
-            autoShowColumnFilterButton: false,
+          selection: {
+            enabled: true,
+            allowCellSelection: true,
+            allowRowHeaderSelection: true,
+            allowColumnHeaderSelection: true,
+            mode: "extended",
           },
           editing: {
             enabled: true,
             mode: "cell",
           },
-          sorting: {
-            enabled: true,
-            mode: "one",
-          },
-          selection: {
-            enabled: true,
-            checkBoxes: {
-              enabled: true,
-            },
-            allowRowSelection: false,
-          },
-          filtering: {
-            enabled: true,
-            filterMenu: {
-              mode: "excel",
-              buttons: ["筛选", "啦啦"],
-            },
-          },
-          keyboardNavigation: true,
           columns: [
             {
               label: "First Name",
@@ -194,9 +176,10 @@ onMounted(() => {
               label: "Hire Date",
               dataField: "HireDate",
               cellsFormat: "d",
+              width: 120,
             },
-            { label: "Address", dataField: "Address" },
-            { label: "City", dataField: "City" },
+            { label: "Address", dataField: "Address", width: 250 },
+            { label: "City", dataField: "City", width: 120 },
             { label: "Country", dataField: "Country" },
           ],
         };
@@ -204,13 +187,9 @@ onMounted(() => {
     }
   );
 });
-const onRowEndEdit = (event) => {
+const onEndEdit = (event) => {
+  console.log(111);
   console.log(event);
-};
-const grid = ref(null);
-const change = (event, obj) => {
-  console.log(event, obj);
-  console.log(grid.value.getSelection());
 };
 </script>
 

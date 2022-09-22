@@ -1,7 +1,7 @@
 <template>
   <base-table :data="data" :state="state" :columns="columns">
-    <template #name="{ text, column }">
-      <div>{{ text + "||" + column }}</div>
+    <template #name="{ data }">
+      <div>大大大 {{ data.text }}</div>
     </template>
   </base-table>
 </template>
@@ -46,7 +46,6 @@ const columns = [
     key: "name",
     type: "text",
     customFilterDropdown: true,
-    scopedSlots: { customRender: "name" },
   },
   {
     title: "Age",

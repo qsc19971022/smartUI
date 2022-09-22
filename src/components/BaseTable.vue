@@ -66,8 +66,8 @@
     <template #customFilterIcon="{ filtered }">
       <search-outlined :style="{ color: filtered ? '#108ee9' : undefined }" />
     </template>
-    <template #bodyCell="{ column }">
-      <slot :name="column.dataIndex" :data="column"></slot>
+    <template #bodyCell="{ text, column }">
+      <slot :name="column.dataIndex" :data="{ text, column }"></slot>
     </template>
   </a-table>
 </template>
@@ -103,6 +103,7 @@ const data = reactive([
     address: "London No. 2 Lake Park",
   },
 ]);
+
 onMounted(() => {
   getColumnData();
 });

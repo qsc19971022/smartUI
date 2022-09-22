@@ -1,16 +1,33 @@
 <template>
   <div className="vue-root">
-    <smart-grid ref="grid" @rowClick="onEndEdit" id="grid"></smart-grid>
+    <smart-grid
+      id="grid"
+      ref="grid"
+      @change="change"
+      @onCloseColumnDialog="onCloseColumnDialog"
+      @endEdit="onRowEndEdit"
+    ></smart-grid>
   </div>
 </template>
 
 <script setup>
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import "smart-webcomponents/source/styles/smart.default.css";
 import "smart-webcomponents/source/modules/smart.grid.js";
-
 onMounted(() => {
-  // const grid = ref();
+  const moodTemplate = document.createElement("template");
+  moodTemplate.id = "moodTemplate";
+  moodTemplate.innerHTML = `<div>Mood: {{value=😊}}</div>`;
+  document.body.appendChild(moodTemplate);
+
+  const moodEditorTemplate = document.createElement("template");
+  moodEditorTemplate.id = "moodEditorTemplate";
+  moodEditorTemplate.innerHTML = ` <div tabindex="0" style="padding: 0px; display:flex; justify-content: center;">
+        <span tabindex="1">😊</span>
+        <span tabindex="2">😐</span>
+        <span tabindex="3">😂</span>
+      </div>`;
+  document.body.appendChild(moodEditorTemplate);
   window.Smart(
     "#grid",
     class {
@@ -141,17 +158,39 @@ onMounted(() => {
               "BirthDate: date",
             ],
           }),
-          selection: {
-            enabled: true,
-            allowCellSelection: true,
-            allowRowHeaderSelection: true,
-            allowColumnHeaderSelection: true,
-            mode: "extended",
+          appearance: {
+            autoShowColumnFilterButton: false,
           },
           editing: {
             enabled: true,
-            mode: "cell",
+            action: "none",
+            mode: "row",
+            commandColumn: {
+              visible: true,
+            },
+            dialog: {
+              enabled: true,
+            },
           },
+          sorting: {
+            enabled: true,
+            mode: "one",
+          },
+          selection: {
+            enabled: true,
+            checkBoxes: {
+              enabled: true,
+            },
+            allowRowSelection: false,
+          },
+          filtering: {
+            enabled: true,
+            filterMenu: {
+              // mode: "excel",
+              buttons: ["筛选", "啦啦"],
+            },
+          },
+          keyboardNavigation: true,
           columns: [
             {
               label: "First Name",
@@ -163,6 +202,16 @@ onMounted(() => {
               label: "Last Name",
               dataField: "LastName",
               columnGroup: "name",
+              editor: {
+                template: "#moodEditorTemplate",
+                onInit(index, dataField, editor) {
+                  editor.addEventListener("click", (event) => {
+                    console.log(event);
+                    editor.firstElementChild.value = event.target.innerHTML;
+                  });
+                },
+              },
+              template: "#moodTemplate",
               width: 200,
             },
             { label: "Title", dataField: "Title", width: 160 },
@@ -176,10 +225,9 @@ onMounted(() => {
               label: "Hire Date",
               dataField: "HireDate",
               cellsFormat: "d",
-              width: 120,
             },
-            { label: "Address", dataField: "Address", width: 250 },
-            { label: "City", dataField: "City", width: 120 },
+            { label: "Address", dataField: "Address" },
+            { label: "City", dataField: "City" },
             { label: "Country", dataField: "Country" },
           ],
         };
@@ -187,8 +235,15 @@ onMounted(() => {
     }
   );
 });
-const onEndEdit = (event) => {
-  console.log(111);
+const onRowEndEdit = (event) => {
+  console.log(event);
+};
+const grid = ref(null);
+const change = (event, obj) => {
+  console.log(event, obj);
+  // console.log(grid.value.getSelection());
+};
+const onCloseColumnDialog = (event) => {
   console.log(event);
 };
 </script>

@@ -33,13 +33,21 @@
         </div>
         <div class="header">
           <slot name="header">
-            <!--            <a-tag-->
-            <!--              :key="index"-->
-            <!--              closable-->
-            <!--              @close.prevent-->
-            <!--              v-for="(item, index) in searchInfo"-->
-            <!--              >{{ item.title + ":" + item.value }}</a-tag-->
-            <!--            >-->
+            <span
+              :key="index"
+              class="tag"
+              @close.prevent
+              v-for="(item, index) in searchInfo"
+            >
+              {{ item.title + ":  " + item.value }}
+              <a-button
+                type="link"
+                size="small"
+                @click="deleteSearchTag(item.dataIndex)"
+              >
+                <template #icon><CloseOutlined /></template>
+              </a-button>
+            </span>
           </slot>
         </div>
         <div class="header-right">
@@ -73,17 +81,19 @@
           v-if="column.type === 'text'"
           ref="searchInput"
           :placeholder="`Search ${column.dataIndex}`"
-          :value="selectedKeys"
+          :value="selectedKeys[0]"
           style="width: 188px; margin-bottom: 8px; display: block"
-          @change="(e) => setSelectedKeys(e.target.value ? e.target.value : '')"
-          @pressEnter="handleSearch(selectedKeys, confirm, column.dataIndex)"
+          @change="
+            (e) => setSelectedKeys(e.target.value ? [e.target.value] : [])
+          "
+          @pressEnter="handleSearch(selectedKeys[0], confirm, column.dataIndex)"
         />
         <a-select
           v-if="column.type === 'select'"
           ref="searchSelect"
           :options="columnData[column.dataIndex]"
           :placeholder="`Search ${column.dataIndex}`"
-          :value="selectedKeys[0]"
+          :value="selectedKeys"
           style="width: 188px; margin: 8px 0; display: block"
           @change="(e) => setSelectedKeys(e)"
         />
@@ -99,7 +109,7 @@
             type="primary"
             size="small"
             style="width: 90px; margin-right: 8px"
-            @click="handleSearch(selectedKeys, confirm, column)"
+            @click="handleSearch(selectedKeys, confirm, column, clearFilters)"
           >
             <template #icon><SearchOutlined /></template>
             搜索
@@ -115,7 +125,9 @@
       </div>
     </template>
     <template #customFilterIcon="{ filtered }">
-      <search-outlined :style="{ color: filtered ? '#108ee9' : undefined }" />
+      <DownCircleOutlined
+        :style="{ color: filtered ? '#108ee9' : undefined }"
+      />
     </template>
     <template #bodyCell="{ text, column }">
       <slot :name="column.dataIndex" :data="{ text, column }"></slot>
@@ -123,7 +135,12 @@
   </a-table>
 </template>
 <script setup>
-import { SearchOutlined, DownOutlined } from "@ant-design/icons-vue";
+import {
+  SearchOutlined,
+  DownOutlined,
+  CloseOutlined,
+  DownCircleOutlined,
+} from "@ant-design/icons-vue";
 import { defineProps, onMounted, reactive, ref } from "vue";
 defineProps({
   columns: Array,
@@ -173,8 +190,14 @@ const columnData = reactive({});
 const filterTypeIndex = ref(0);
 const searchInput = ref();
 
-const handleSearch = (selectedKeys, confirm, column) => {
-  searchInfo[column.dataIndex] = selectedKeys;
+const handleSearch = (selectedKeys, confirm, column, clearFilters) => {
+  console.log(selectedKeys);
+  searchInfo[column.dataIndex] = {
+    title: column.title,
+    value: column.type === "text" ? selectedKeys[0] : selectedKeys,
+    dataIndex: column.dataIndex,
+  };
+  handleReset(clearFilters);
   confirm();
   state.searchText = selectedKeys;
   state.searchedColumn = column.dataIndex;
@@ -216,6 +239,11 @@ const filterType = (index) => {
   filterTypeIndex.value = index;
 };
 
+const deleteSearchTag = (item) => {
+  state.searchText = "";
+  delete searchInfo[item];
+  console.log(state);
+};
 // const showFilterBox = () => {
 //   console.log(111);
 // };
@@ -233,5 +261,14 @@ const filterType = (index) => {
 }
 .header-right {
   width: 28%;
+}
+.tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 7px 17px;
+  box-sizing: border-box;
+  border-radius: 20px;
+  border: 1px skyblue solid;
+  margin: 0 2px;
 }
 </style>

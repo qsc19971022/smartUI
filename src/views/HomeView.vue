@@ -1,44 +1,30 @@
 <template>
-  <base-table :data="data" :state="state" :columns="columns">
-    <template #name="{ data }">
-      <div>大大大 {{ data.text }}</div>
-    </template>
-  </base-table>
+  <div class="container">
+    <base-table :state="state" :columns="columns" :filterData="filterData">
+      <!--      <template #header>-->
+      <!--        <div>啦啦啦啦啦</div>-->
+      <!--      </template>-->
+      <template #name="{ data }">
+        <div>大大大 {{ data.text }}</div>
+      </template>
+    </base-table>
+  </div>
 </template>
 <script setup>
 import BaseTable from "@/components/BaseTable";
 import { reactive } from "vue";
-const data = [
-  {
-    key: "1",
-    name: "John Brown",
-    age: 32,
-    address: "New York No. 1 Lake Park",
-  },
-  {
-    key: "2",
-    name: "Joe Black",
-    age: 42,
-    address: "London No. 1 Lake Park",
-  },
-  {
-    key: "3",
-    name: "Jim Green",
-    age: 32,
-    address: "Sidney No. 1 Lake Park",
-  },
-  {
-    key: "4",
-    name: "Jim Red",
-    age: 32,
-    address: "London No. 2 Lake Park",
-  },
-];
 const state = reactive({
   searchText: "",
   searchedColumn: "",
 });
 
+const filterData = [
+  { label: "嘻嘻的客户", value: 1 },
+  { label: "啦啦的客户", value: 2 },
+  { label: "嘿嘿的客户", value: 3 },
+  { label: "呵呵的客户", value: 4 },
+  { label: "哈哈的客户", value: 5 },
+];
 const columns = [
   {
     title: "Name",
@@ -61,11 +47,19 @@ const columns = [
     type: "text",
     customFilterDropdown: true,
   },
+  {
+    title: "date",
+    dataIndex: "date",
+    key: "date",
+    type: "date",
+    customFilterDropdown: true,
+  },
 ];
 </script>
 <style scoped>
-.highlight {
-  background-color: rgb(255, 192, 105);
-  padding: 0px;
+.container {
+  width: 90%;
+  height: 400px;
+  margin: 30px auto;
 }
 </style>

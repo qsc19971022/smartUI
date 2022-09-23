@@ -5,5 +5,5 @@ import Antd from "ant-design-vue";
 import "ant-design-vue/dist/antd.css";
 
 const app = createApp(App);
-app.config.isCustomElement = (tag) => tag.startsWith("smart-");
+// app.config.compilerOptions.isCustomElement = (tag) => tag.startsWith("smart-");
 app.use(Antd).use(router).mount("#app");

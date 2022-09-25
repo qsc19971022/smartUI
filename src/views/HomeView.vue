@@ -1,11 +1,19 @@
 <template>
   <div class="container">
-    <base-table :state="state" :columns="columns" :filterData="filterData">
+    <base-table
+      :state="state"
+      :columns="columns"
+      :filterData="filterData"
+      @changeSelection="changeSelection"
+    >
       <!--      <template #header>-->
       <!--        <div>啦啦啦啦啦</div>-->
       <!--      </template>-->
-      <template #name="{ data }">
-        <div>大大大 {{ data.text }}</div>
+      <template #headerRight>右侧按钮插槽</template>
+      <template #action="{ data }">
+        <a-button type="primary" size="small" @click="edit(data)"
+          >编辑</a-button
+        >
       </template>
     </base-table>
   </div>
@@ -27,34 +35,45 @@ const filterData = [
 ];
 const columns = [
   {
-    title: "Name",
+    title: "名称",
     dataIndex: "name",
     key: "name",
     type: "text",
     customFilterDropdown: true,
   },
   {
-    title: "Age",
+    title: "年龄",
     dataIndex: "age",
     key: "age",
     type: "select",
     customFilterDropdown: true,
   },
   {
-    title: "Address",
+    title: "地址",
     dataIndex: "address",
     key: "address",
     type: "text",
-    customFilterDropdown: true,
   },
   {
-    title: "date",
+    title: "日期",
     dataIndex: "date",
     key: "date",
     type: "date",
     customFilterDropdown: true,
   },
+  {
+    title: "操作",
+    dataIndex: "action",
+    key: "action",
+  },
 ];
+const edit = (item) => {
+  console.log(item);
+};
+
+const changeSelection = (item) => {
+  console.log(item);
+};
 </script>
 <style scoped>
 .container {

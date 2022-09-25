@@ -1,15 +1,19 @@
 <template>
   <a-table
-    bordered
+    size="middle"
+    class="ant-table-striped"
     :data-source="data"
     :columns="columns"
+    :row-class-name="
+      (_record, index) => (index % 2 === 1 ? 'table-striped' : null)
+    "
     :row-selection="{
       selectedRowKeys: state.selectedRowKeys,
       onChange: onSelectChange,
     }"
   >
     <template #title>
-      <div class="header-container">
+      <div v-if="!state.selectedRowKeys.length" class="header-container">
         <div class="header-left">
           <slot name="headerLeft">
             <a-dropdown :trigger="['click']">
@@ -54,11 +58,20 @@
           <slot name="headerRight">Header</slot>
         </div>
       </div>
+      <div v-else class="header-selected">
+        <div>已选中 {{ state.selectedRowKeys.length }} 项</div>
+        <a-button
+          class="header-right-selected"
+          type="link"
+          size="small"
+          @click="closeSelected"
+        >
+          <template #icon><CloseOutlined /></template>
+        </a-button>
+      </div>
     </template>
     <template #headerCell="{ column }">
-      <template v-if="column.key === 'name'">
-        <span style="color: #1890ff">Name</span>
-      </template>
+      <template v-if="column.key === 'name'"> </template>
     </template>
     <template
       #customFilterDropdown="{
@@ -71,16 +84,32 @@
     >
       <div style="padding: 8px">
         <a-button
-          style="display: block; margin: 5px 0"
+          type="text"
+          size="small"
+          style="display: block; margin: 10px 0"
           @click="sortBy(column.dataIndex, 'up')"
-          >升序</a-button
         >
-        <a-button @click="sortBy(column.dataIndex, 'down')">降序</a-button>
-        <a-button style="display: block; margin: 5px 0">清除排序</a-button>
+          <template #icon><SortDescendingOutlined /></template>
+          升序
+        </a-button>
+        <a-button
+          size="small"
+          type="text"
+          style="display: block; margin: 10px 0"
+          @click="sortBy(column.dataIndex, 'down')"
+        >
+          <template #icon><SortAscendingOutlined /></template>
+          降序</a-button
+        >
+        <a-divider style="margin: 12px 0" />
+        <div style="margin-left: 6px; margin-bottom: 10px; font-size: 14px">
+          <FilterFilled />
+          筛选
+        </div>
         <a-input
           v-if="column.type === 'text'"
           ref="searchInput"
-          :placeholder="`Search ${column.dataIndex}`"
+          :placeholder="`请输入${column.title}`"
           :value="selectedKeys[0]"
           style="width: 188px; margin-bottom: 8px; display: block"
           @change="
@@ -92,34 +121,33 @@
           v-if="column.type === 'select'"
           ref="searchSelect"
           :options="columnData[column.dataIndex]"
-          :placeholder="`Search ${column.dataIndex}`"
+          :placeholder="`请输入${column.title}`"
           :value="selectedKeys"
           style="width: 188px; margin: 8px 0; display: block"
-          @change="(e) => setSelectedKeys(e)"
+          @change="(e) => setSelectedKeys(e ? [e] : [])"
         />
         <a-range-picker
           v-if="column.type === 'date'"
           :show-time="{ format: 'HH:mm' }"
           format="YYYY-MM-DD HH:mm"
-          :placeholder="['Start Time', 'End Time']"
+          :placeholder="['开始时间', '结束时间']"
           @change="(e, date) => setSelectedKeys(date)"
         />
-        <div>
-          <a-button
-            type="primary"
-            size="small"
-            style="width: 90px; margin-right: 8px"
-            @click="handleSearch(selectedKeys, confirm, column, clearFilters)"
-          >
-            <template #icon><SearchOutlined /></template>
-            搜索
-          </a-button>
+        <div style="margin-top: 18px; text-align: right">
           <a-button
             size="small"
-            style="width: 90px"
+            style="width: 70px; margin-right: 8px"
             @click="handleReset(clearFilters)"
           >
             重置
+          </a-button>
+          <a-button
+            type="primary"
+            size="small"
+            style="width: 70px"
+            @click="handleSearch(selectedKeys, confirm, column, clearFilters)"
+          >
+            搜索
           </a-button>
         </div>
       </div>
@@ -129,23 +157,41 @@
         :style="{ color: filtered ? '#108ee9' : undefined }"
       />
     </template>
-    <template #bodyCell="{ text, column }">
-      <slot :name="column.dataIndex" :data="{ text, column }"></slot>
+    <template #bodyCell="{ text, record, index, column }">
+      <slot
+        :name="column.dataIndex"
+        :data="{ text, record, index, column }"
+      ></slot>
     </template>
   </a-table>
 </template>
 <script setup>
 import {
-  SearchOutlined,
   DownOutlined,
   CloseOutlined,
   DownCircleOutlined,
+  SortDescendingOutlined,
+  SortAscendingOutlined,
+  FilterFilled,
 } from "@ant-design/icons-vue";
-import { defineProps, onMounted, reactive, ref } from "vue";
+import {
+  defineProps,
+  onMounted,
+  reactive,
+  ref,
+  defineEmits,
+  defineExpose,
+} from "vue";
+const state = reactive({
+  searchText: "",
+  searchedColumn: "",
+  selectedRowKeys: [],
+});
 defineProps({
   columns: Array,
   filterData: Array,
 });
+const emit = defineEmits(["changeSelection"]);
 const data = reactive([
   {
     key: "1",
@@ -180,11 +226,6 @@ const data = reactive([
 onMounted(() => {
   getColumnData();
 });
-const state = reactive({
-  searchText: "",
-  searchedColumn: "",
-  selectedRowKeys: [],
-});
 const searchInfo = reactive({});
 const columnData = reactive({});
 const filterTypeIndex = ref(0);
@@ -192,35 +233,35 @@ const searchInput = ref();
 
 const handleSearch = (selectedKeys, confirm, column, clearFilters) => {
   console.log(selectedKeys);
-  searchInfo[column.dataIndex] = {
-    title: column.title,
-    value: column.type === "text" ? selectedKeys[0] : selectedKeys,
-    dataIndex: column.dataIndex,
-  };
+  if (selectedKeys.length) {
+    searchInfo[column.dataIndex] = {
+      title: column.title,
+      value: selectedKeys[0],
+      dataIndex: column.dataIndex,
+    };
+  }
   handleReset(clearFilters);
   confirm();
-  state.searchText = selectedKeys;
+  state.searchText = selectedKeys[0];
   state.searchedColumn = column.dataIndex;
-  console.log(searchInfo);
 };
 
 const handleReset = (clearFilters) => {
   clearFilters({
-    confirm: true,
+    confirm: false,
   });
   state.searchText = "";
 };
 
 const sortBy = (field, mode) => {
-  console.log(field);
   data.sort((x, y) => {
     return mode === "up" ? x[field] - y[field] : y[field] - x[field];
   });
 };
 
 const onSelectChange = (selectedRowKeys) => {
-  console.log("selectedRowKeys changed: ", selectedRowKeys);
   state.selectedRowKeys = selectedRowKeys;
+  emit("changeSelection", selectedRowKeys);
 };
 
 const getColumnData = () => {
@@ -231,27 +272,29 @@ const getColumnData = () => {
       temp.push({ label: res.age, value: res.age });
     });
     columnData[item] = temp;
-    // columnData[item] =
   });
-  console.log(columnData.age);
 };
 const filterType = (index) => {
   filterTypeIndex.value = index;
 };
 
+const closeSelected = () => {
+  state.selectedRowKeys = [];
+};
 const deleteSearchTag = (item) => {
   state.searchText = "";
   delete searchInfo[item];
-  console.log(state);
 };
-// const showFilterBox = () => {
-//   console.log(111);
-// };
+
+defineExpose({
+  state,
+});
 </script>
 <style scoped>
 .header-container {
   display: flex;
   justify-content: flex-start;
+  box-sizing: border-box;
 }
 .header-left {
   width: 12%;
@@ -265,10 +308,23 @@ const deleteSearchTag = (item) => {
 .tag {
   display: inline-block;
   font-size: 12px;
-  padding: 7px 17px;
+  padding: 2px 8px;
   box-sizing: border-box;
   border-radius: 20px;
   border: 1px skyblue solid;
   margin: 0 2px;
+}
+.header-selected {
+  position: relative;
+  padding: 7px 0;
+  box-sizing: border-box;
+}
+.header-right-selected {
+  position: absolute;
+  right: -10px;
+  top: 4px;
+}
+.ant-table-striped :deep(.table-striped) td {
+  background-color: #fafafa;
 }
 </style>

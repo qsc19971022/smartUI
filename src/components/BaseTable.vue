@@ -4,6 +4,10 @@
     class="ant-table-striped"
     :data-source="data"
     :columns="columns"
+    row-key="id"
+    :loading="loading"
+    :pagination="pagination"
+    @change="handleTableChange"
     :row-class-name="
       (_record, index) => (index % 2 === 1 ? 'table-striped' : null)
     "
@@ -43,7 +47,8 @@
               @close.prevent
               v-for="(item, index) in searchInfo"
             >
-              {{ item.title + ":  " + item.value }}
+              {{ item.title + ":" }}
+              <span style="color: blueviolet">{{ item.value }}</span>
               <a-button
                 type="link"
                 size="small"
@@ -158,10 +163,33 @@
       />
     </template>
     <template #bodyCell="{ text, record, index, column }">
-      <slot
-        :name="column.dataIndex"
-        :data="{ text, record, index, column }"
-      ></slot>
+      <slot :name="column.dataIndex" :data="{ text, record, index, column }">
+        <div v-if="column.type === 'text'">
+          <a-input
+            v-if="editableData[record.id]"
+            v-model:value="editableData[record.id][column.dataIndex]"
+            style="margin: -5px 0"
+          />
+          <template v-else>
+            {{ text }}
+          </template>
+        </div>
+        <div v-if="column.dataIndex === 'action'">
+          <div class="editable-row-operations">
+            <span v-if="editableData[record.id]">
+              <a-typography-link @click="save(record.id)"
+                >保存</a-typography-link
+              >
+              <a-popconfirm title="确定取消?" @confirm="cancel(record.id)">
+                <a>取消</a>
+              </a-popconfirm>
+            </span>
+            <span v-else>
+              <a @click="edit(record.id)">编辑</a>
+            </span>
+          </div>
+        </div>
+      </slot>
     </template>
   </a-table>
 </template>
@@ -182,57 +210,76 @@ import {
   defineEmits,
   defineExpose,
 } from "vue";
+import axios from "axios";
+let data = ref([]);
 const state = reactive({
   searchText: "",
   searchedColumn: "",
   selectedRowKeys: [],
+  searchParams: {},
 });
 defineProps({
   columns: Array,
   filterData: Array,
+  columnData: Object,
 });
-const emit = defineEmits(["changeSelection"]);
-const data = reactive([
-  {
-    key: "1",
-    name: "John Brown",
-    age: 32,
-    address: "New York No. 1 Lake Park",
-    date: "2019-07-13",
-  },
-  {
-    key: "2",
-    name: "Joe Black",
-    age: 42,
-    address: "London No. 1 Lake Park",
-    date: "2019-07-13",
-  },
-  {
-    key: "3",
-    name: "Jim Green",
-    age: 32,
-    address: "Sidney No. 1 Lake Park",
-    date: "2019-07-13",
-  },
-  {
-    key: "4",
-    name: "Jim Red",
-    age: 32,
-    address: "London No. 2 Lake Park",
-    date: "2019-07-13",
-  },
-]);
+const editableData = reactive({});
 
-onMounted(() => {
-  getColumnData();
+const edit = (key) => {
+  editableData[key] = JSON.parse(
+    JSON.stringify(data.value.filter((item) => key === item.id)[0])
+  );
+};
+
+const save = (key) => {
+  Object.assign(
+    data.value.filter((item) => key === item.id)[0],
+    editableData[key]
+  );
+  delete editableData[key];
+};
+
+const cancel = (key) => {
+  delete editableData[key];
+};
+
+const pagination = reactive({
+  total: 0,
+  current: 1,
+  pageSize: 10,
+  showSizeChanger: true,
+  showQuickJumper: true,
+});
+const loading = ref(true);
+const emit = defineEmits(["changeSelection"]);
+onMounted(async () => {
+  await getTableData({
+    current: 1,
+    pageSize: 10,
+  });
 });
 const searchInfo = reactive({});
-const columnData = reactive({});
 const filterTypeIndex = ref(0);
 const searchInput = ref();
 
+const queryData = async (params) => {
+  const tableData = await axios.post(
+    "https://api.spacexdata.com/v4/crew/query",
+    { query: params }
+  );
+  return tableData.data;
+};
+
+const getTableData = async (params = {}) => {
+  loading.value = true;
+  const { docs, totalDocs, page, limit } = await queryData(params);
+  data.value = docs;
+  pagination.current = page;
+  pagination.total = totalDocs;
+  pagination.pageSize = limit;
+  loading.value = false;
+};
 const handleSearch = (selectedKeys, confirm, column, clearFilters) => {
-  console.log(selectedKeys);
   if (selectedKeys.length) {
     searchInfo[column.dataIndex] = {
       title: column.title,
@@ -244,6 +291,10 @@ const handleSearch = (selectedKeys, confirm, column, clearFilters) => {
   confirm();
   state.searchText = selectedKeys[0];
   state.searchedColumn = column.dataIndex;
+  for (const item in searchInfo) {
+    state.searchParams[item] = searchInfo[item].value;
+  }
+  getTableData(state.searchParams);
 };
 
 const handleReset = (clearFilters) => {
@@ -254,9 +305,15 @@ const handleReset = (clearFilters) => {
 };
 
 const sortBy = (field, mode) => {
-  data.sort((x, y) => {
-    return mode === "up" ? x[field] - y[field] : y[field] - x[field];
-  });
+  // data.value.sort((x, y) => {
+  //   // return mode === "up" ? x[field] - y[field] : y[field] - x[field];
+  //   return mode === "up" ? x[field] - y[field] : y[field] - x[field];
+  // });
+  data.value.sort((a, b) =>
+    mode === "up"
+      ? a[field].localeCompare(b[field])
+      : b[field].localeCompare(a[field])
+  );
 };
 
 const onSelectChange = (selectedRowKeys) => {
@@ -264,16 +321,6 @@ const onSelectChange = (selectedRowKeys) => {
   emit("changeSelection", selectedRowKeys);
 };
 
-const getColumnData = () => {
-  const keys = Object.keys(data[0]);
-  keys.map((item) => {
-    let temp = [];
-    data.map((res) => {
-      temp.push({ label: res.age, value: res.age });
-    });
-    columnData[item] = temp;
-  });
-};
 const filterType = (index) => {
   filterTypeIndex.value = index;
 };
@@ -284,8 +331,21 @@ const closeSelected = () => {
 const deleteSearchTag = (item) => {
   state.searchText = "";
   delete searchInfo[item];
+  delete state.searchParams[item];
+  getTableData(state.searchParams);
 };
 
+const handleTableChange = ({ current, pageSize, total }) => {
+  pagination.current = current;
+  pagination.pageSize = pageSize;
+  pagination.total = total;
+  let params = {
+    page: current,
+    limit: pageSize,
+  };
+  params = Object.assign(params, state.searchParams);
+  getTableData(params);
+};
 defineExpose({
   state,
 });
@@ -295,15 +355,16 @@ defineExpose({
   display: flex;
   justify-content: flex-start;
   box-sizing: border-box;
+  height: 30px;
 }
 .header-left {
-  width: 12%;
+  width: 8%;
 }
 .header {
-  width: 65%;
+  width: 69%;
 }
 .header-right {
-  width: 28%;
+  width: 23%;
 }
 .tag {
   display: inline-block;
@@ -318,6 +379,7 @@ defineExpose({
   position: relative;
   padding: 7px 0;
   box-sizing: border-box;
+  height: 30px;
 }
 .header-right-selected {
   position: absolute;
@@ -326,5 +388,8 @@ defineExpose({
 }
 .ant-table-striped :deep(.table-striped) td {
   background-color: #fafafa;
+}
+.editable-row-operations a {
+  margin-right: 8px;
 }
 </style>

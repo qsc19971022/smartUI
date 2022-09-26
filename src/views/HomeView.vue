@@ -3,18 +3,17 @@
     <base-table
       :state="state"
       :columns="columns"
+      :column-data="columnData"
       :filterData="filterData"
       @changeSelection="changeSelection"
     >
       <!--      <template #header>-->
       <!--        <div>啦啦啦啦啦</div>-->
       <!--      </template>-->
-      <template #headerRight>右侧按钮插槽</template>
-      <template #action="{ data }">
-        <a-button type="primary" size="small" @click="edit(data)"
-          >编辑</a-button
-        >
+      <template #image="{ data }">
+        <a-image :width="30" :src="data.text" />
       </template>
+      <template #headerRight>右侧按钮插槽</template>
     </base-table>
   </div>
 </template>
@@ -25,7 +24,13 @@ const state = reactive({
   searchText: "",
   searchedColumn: "",
 });
-
+const columnData = {
+  agency: [
+    { label: "NASA", value: "NASA" },
+    { label: "ESA", value: "ESA" },
+    { label: "JAXA", value: "JAXA" },
+  ],
+};
 const filterData = [
   { label: "嘻嘻的客户", value: 1 },
   { label: "啦啦的客户", value: 2 },
@@ -35,41 +40,48 @@ const filterData = [
 ];
 const columns = [
   {
-    title: "名称",
+    title: "ID",
+    dataIndex: "id",
+    key: "id",
+    width: 300,
+  },
+  {
+    title: "宇航员",
     dataIndex: "name",
     key: "name",
     type: "text",
+    width: 280,
     customFilterDropdown: true,
   },
   {
-    title: "年龄",
-    dataIndex: "age",
-    key: "age",
+    title: "机构",
+    dataIndex: "agency",
+    key: "agency",
     type: "select",
     customFilterDropdown: true,
   },
   {
-    title: "地址",
-    dataIndex: "address",
-    key: "address",
+    title: "状态",
+    dataIndex: "status",
+    key: "status",
     type: "text",
+    width: 300,
   },
   {
-    title: "日期",
-    dataIndex: "date",
-    key: "date",
-    type: "date",
-    customFilterDropdown: true,
+    title: "照片",
+    dataIndex: "image",
+    key: "image",
   },
   {
     title: "操作",
     dataIndex: "action",
     key: "action",
+    width: 400,
   },
 ];
-const edit = (item) => {
-  console.log(item);
-};
+// const edit = (item) => {
+//   console.log(item);
+// };
 
 const changeSelection = (item) => {
   console.log(item);

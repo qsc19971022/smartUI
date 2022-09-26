@@ -237,6 +237,7 @@ const save = (key) => {
     editableData[key]
   );
   delete editableData[key];
+  console.log(key);
 };
 
 const cancel = (key) => {

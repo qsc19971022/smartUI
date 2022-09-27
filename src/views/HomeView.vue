@@ -13,7 +13,13 @@
       <template #image="{ data }">
         <a-image :width="30" :src="data.text" />
       </template>
-      <template #headerRight>右侧按钮插槽</template>
+      <template #headerRight>
+        <div class="menuRight">
+          <a-button class="button" type="primary">右侧按钮区域</a-button>
+          <a-button class="button">都是</a-button>
+          <a-button class="button" type="text">文字按钮</a-button>
+        </div>
+      </template>
     </base-table>
   </div>
 </template>
@@ -91,6 +97,9 @@ const changeSelection = (item) => {
 .container {
   width: 90%;
   height: 400px;
-  margin: 30px auto;
+  margin: 50px auto;
+}
+.button {
+  margin: 0 6px;
 }
 </style>

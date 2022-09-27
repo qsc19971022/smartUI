@@ -41,22 +41,25 @@
         </div>
         <div class="header">
           <slot name="header">
-            <span
+            <a-tooltip
               :key="index"
-              class="tag"
               @close.prevent
+              style="font-size: 12px"
               v-for="(item, index) in searchInfo"
             >
-              {{ item.title + ":" }}
-              <span style="color: blueviolet">{{ item.value }}</span>
-              <a-button
-                type="link"
-                size="small"
-                @click="deleteSearchTag(item.dataIndex)"
-              >
-                <template #icon><CloseOutlined /></template>
-              </a-button>
-            </span>
+              <span class="tag">
+                {{ item.title + ":" }}
+                <span style="color: blueviolet">{{ item.value }}</span>
+                <a-button
+                  type="link"
+                  size="small"
+                  @click="deleteSearchTag(item.dataIndex)"
+                >
+                  <template #icon><CloseOutlined /></template>
+                </a-button>
+              </span>
+              <template #title>{{ item.title + "-" + item.value }}</template>
+            </a-tooltip>
           </slot>
         </div>
         <div class="header-right">
@@ -177,9 +180,7 @@
         <div v-if="column.dataIndex === 'action'">
           <div class="editable-row-operations">
             <span v-if="editableData[record.id]">
-              <a-typography-link @click="save(record.id)"
-                >保存</a-typography-link
-              >
+              <a-typography-link @click="save(record)">保存</a-typography-link>
               <a-popconfirm title="确定取消?" @confirm="cancel(record.id)">
                 <a>取消</a>
               </a-popconfirm>
@@ -233,10 +234,10 @@ const edit = (key) => {
 
 const save = (key) => {
   Object.assign(
-    data.value.filter((item) => key === item.id)[0],
-    editableData[key]
+    data.value.filter((item) => key.id === item.id)[0],
+    editableData[key.id]
   );
-  delete editableData[key];
+  delete editableData[key.id];
   console.log(key);
 };
 
@@ -362,10 +363,10 @@ defineExpose({
   width: 8%;
 }
 .header {
-  width: 69%;
+  width: 72%;
 }
 .header-right {
-  width: 23%;
+  width: 20%;
 }
 .tag {
   display: inline-block;

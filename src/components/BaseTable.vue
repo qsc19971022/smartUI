@@ -255,10 +255,13 @@ const pagination = reactive({
 const loading = ref(true);
 const emit = defineEmits(["changeSelection"]);
 onMounted(async () => {
-  await getTableData({
-    current: 1,
-    pageSize: 10,
-  });
+  await getTableData(
+    {},
+    {
+      current: 1,
+      pageSize: 10,
+    }
+  );
 });
 const searchInfo = reactive({});
 const filterTypeIndex = ref(0);
@@ -267,7 +270,10 @@ const searchInput = ref();
 const queryData = async (params) => {
   const tableData = await axios.post(
     "https://api.spacexdata.com/v4/crew/query",
-    { query: params }
+    {
+      query: params,
+      options: { page: pagination.current, limit: pagination.pageSize },
+    }
   );
   return tableData.data;
 };
@@ -341,12 +347,11 @@ const handleTableChange = ({ current, pageSize, total }) => {
   pagination.current = current;
   pagination.pageSize = pageSize;
   pagination.total = total;
-  let params = {
-    page: current,
-    limit: pageSize,
-  };
-  params = Object.assign(params, state.searchParams);
-  getTableData(params);
+  // const params = {
+  //   page: current,
+  //   limit: pageSize,
+  // };
+  getTableData(state.searchParams);
 };
 defineExpose({
   state,

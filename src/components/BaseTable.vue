@@ -363,10 +363,10 @@ defineExpose({
   width: 8%;
 }
 .header {
-  width: 72%;
+  width: 70%;
 }
 .header-right {
-  width: 20%;
+  width: 22%;
 }
 .tag {
   display: inline-block;
